@@ -1,10 +1,20 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
+/** User TS interface represent User document */
+interface IUser {
+  full_name: string;
+  phone: string;
+  age?: number;
+  gender?: "Male" | "Female" | "Other";
+}
+
+/** Define User schema */
+const userSchema = new mongoose.Schema<IUser>({
   full_name: {
     type: String,
     required: true,
   },
+  /** @ts-ignore */
   phone: {
     type: String,
     required: [true, "Phone number is required!"],

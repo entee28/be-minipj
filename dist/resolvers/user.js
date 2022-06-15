@@ -48,6 +48,27 @@ __decorate([
 UserObject = __decorate([
     (0, type_graphql_1.ObjectType)()
 ], UserObject);
+let UserInput = class UserInput {
+};
+__decorate([
+    (0, type_graphql_1.Field)(),
+    __metadata("design:type", String)
+], UserInput.prototype, "full_name", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(),
+    __metadata("design:type", String)
+], UserInput.prototype, "phone", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(),
+    __metadata("design:type", Number)
+], UserInput.prototype, "age", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(),
+    __metadata("design:type", String)
+], UserInput.prototype, "gender", void 0);
+UserInput = __decorate([
+    (0, type_graphql_1.InputType)()
+], UserInput);
 let FieldError = class FieldError {
 };
 __decorate([
@@ -76,7 +97,8 @@ UserResponse = __decorate([
     (0, type_graphql_1.ObjectType)()
 ], UserResponse);
 let UserResolver = class UserResolver {
-    async createUser(full_name, phone, age, gender) {
+    async createUser(user_input) {
+        const { full_name, phone, age, gender } = user_input;
         if (!phone.match(/0[35789]\d{8}/) || phone.length !== 10) {
             return {
                 errors: [
@@ -95,7 +117,14 @@ let UserResolver = class UserResolver {
                 age,
                 gender,
             }).save();
-            user = { ...newUser, total_amount: 0 };
+            user = {
+                _id: newUser._id.toString(),
+                full_name: newUser.full_name,
+                phone: newUser.phone,
+                age: newUser.age,
+                gender: newUser.gender,
+                total_amount: 0,
+            };
         }
         catch (err) {
             if (err.code === 11000) {
@@ -112,7 +141,7 @@ let UserResolver = class UserResolver {
                 return {
                     errors: [
                         {
-                            field: "unknown",
+                            field: "general",
                             message: err.message,
                         },
                     ],
@@ -121,7 +150,8 @@ let UserResolver = class UserResolver {
         }
         return { user };
     }
-    async updateUser(_id, full_name, phone, age, gender) {
+    async updateUser(_id, user_input) {
+        const { full_name, phone, age, gender } = user_input;
         if (!phone.match(/0[35789]\d{8}/) || phone.length !== 10) {
             return {
                 errors: [
@@ -175,11 +205,15 @@ let UserResolver = class UserResolver {
         const orders = await Order_1.default.find({ user: _id }).exec();
         let total_amount = 0;
         orders.forEach((order) => {
-            total_amount += order._doc.amount;
+            total_amount += order.amount;
         });
         return {
             user: {
-                ...user._doc,
+                _id: user._id.toString(),
+                full_name: user.full_name,
+                age: user.age,
+                gender: user.gender,
+                phone: user.phone,
                 total_amount,
             },
         };
@@ -199,11 +233,15 @@ let UserResolver = class UserResolver {
         const orders = await Order_1.default.find({ user: _id }).exec();
         let total_amount = 0;
         orders.forEach((order) => {
-            total_amount += order._doc.amount;
+            total_amount += order.amount;
         });
         return {
             user: {
-                ...user._doc,
+                _id: user._id.toString(),
+                full_name: user.full_name,
+                age: user.age,
+                gender: user.gender,
+                phone: user.phone,
                 total_amount,
             },
         };
@@ -211,23 +249,17 @@ let UserResolver = class UserResolver {
 };
 __decorate([
     (0, type_graphql_1.Mutation)(() => UserResponse),
-    __param(0, (0, type_graphql_1.Arg)("full_name")),
-    __param(1, (0, type_graphql_1.Arg)("phone")),
-    __param(2, (0, type_graphql_1.Arg)("age")),
-    __param(3, (0, type_graphql_1.Arg)("gender")),
+    __param(0, (0, type_graphql_1.Arg)("user_input")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Number, String]),
+    __metadata("design:paramtypes", [UserInput]),
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "createUser", null);
 __decorate([
     (0, type_graphql_1.Mutation)(() => UserResponse),
     __param(0, (0, type_graphql_1.Arg)("_id")),
-    __param(1, (0, type_graphql_1.Arg)("full_name")),
-    __param(2, (0, type_graphql_1.Arg)("phone")),
-    __param(3, (0, type_graphql_1.Arg)("age")),
-    __param(4, (0, type_graphql_1.Arg)("gender")),
+    __param(1, (0, type_graphql_1.Arg)("user_input")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, Number, String]),
+    __metadata("design:paramtypes", [String, UserInput]),
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "updateUser", null);
 __decorate([

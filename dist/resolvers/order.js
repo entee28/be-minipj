@@ -109,7 +109,7 @@ let OrderResolver = class OrderResolver {
                 ],
             };
         }
-        let order;
+        let order = null;
         try {
             const newOrder = await new Order_1.default({
                 user,
@@ -117,7 +117,14 @@ let OrderResolver = class OrderResolver {
                 interest_rate,
             }).save();
             const accrued_amount = (0, calAccrued_1.default)(amount, interest_rate);
-            order = { ...newOrder._doc, accrued_amount };
+            order = {
+                _id: newOrder._id.toString(),
+                code: newOrder.code,
+                user: newOrder.user,
+                amount: newOrder.amount,
+                interest_rate: newOrder.interest_rate,
+                accrued_amount,
+            };
         }
         catch (err) {
             if (err.code === 11000) {
@@ -156,12 +163,30 @@ let OrderResolver = class OrderResolver {
             };
         }
         const accrued_amount = (0, calAccrued_1.default)(queryOrder.amount, queryOrder.interest_rate);
-        const order = { ...queryOrder._doc, accrued_amount };
+        const order = {
+            _id: queryOrder._id.toString(),
+            code: queryOrder.code,
+            user: queryOrder.user,
+            amount: queryOrder.amount,
+            interest_rate: queryOrder.interest_rate,
+            accrued_amount,
+        };
         return { order };
     }
     async getManyOrders(user) {
+        const queryUser = await User_1.default.findById(user);
+        if (!queryUser) {
+            return {
+                errors: [
+                    {
+                        field: "user",
+                        message: "Invalid User",
+                    },
+                ],
+            };
+        }
         const queryOrders = await Order_1.default.find({ user }).exec();
-        if (queryOrders === []) {
+        if (queryOrders.length < 1) {
             return {
                 errors: [
                     {
@@ -174,7 +199,14 @@ let OrderResolver = class OrderResolver {
         let orders = [];
         queryOrders.forEach((order) => {
             const accrued_amount = (0, calAccrued_1.default)(order.amount, order.interest_rate);
-            orders.push({ ...order._doc, accrued_amount });
+            orders.push({
+                _id: order._id.toString(),
+                code: order.code,
+                user: order.user,
+                amount: order.amount,
+                interest_rate: order.interest_rate,
+                accrued_amount,
+            });
         });
         return { orders };
     }

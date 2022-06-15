@@ -10,11 +10,13 @@ import { OrderResolver } from "./resolvers/order";
 const main = async () => {
   const app = express();
 
+  //Connect to MongoDB
   mongoose //@ts-ignore
     .connect(process.env.MONGO_URI)
     .then(() => console.log("MongoDB Connected..."))
     .catch((err) => console.log(err));
 
+  /** Apollo Server config */
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
       resolvers: [UserResolver, OrderResolver],

@@ -11,6 +11,7 @@ import User from "../models/User";
 import calAccrued from "../util/calAccrued";
 import { FieldError } from "./user";
 
+/** Define GraphQL Order type and its fields */
 @ObjectType()
 class OrderObject {
   @Field()
@@ -32,6 +33,7 @@ class OrderObject {
   accrued_amount: number[];
 }
 
+/** Custom Order related return types, which will return 'errors' field if error occurs, else return 'order'/'orders' field */
 @ObjectType()
 class OrderResponse {
   @Field(() => [FieldError], { nullable: true })
@@ -50,14 +52,17 @@ class OrdersResponse {
   orders?: OrderObject[];
 }
 
+/** Order field resolver */
 @Resolver()
 export class OrderResolver {
+  /** create new order mutation */
   @Mutation(() => OrderResponse)
   async createOrder(
     @Arg("user") user: string,
     @Arg("amount") amount: number,
     @Arg("interest_rate") interest_rate: number
   ): Promise<OrderResponse> {
+    /** check if user, amount and interest_rate is valid, if not return error */
     const queryUser = await User.findById(user);
 
     if (!queryUser) {
@@ -93,8 +98,9 @@ export class OrderResolver {
       };
     }
 
-    let order;
+    let order: OrderObject | null = null;
     try {
+      /** create new order and save it */
       const newOrder = await new Order({
         user,
         amount,
@@ -103,8 +109,16 @@ export class OrderResolver {
 
       const accrued_amount: Array<number> = calAccrued(amount, interest_rate);
 
-      order = { ...newOrder._doc, accrued_amount };
+      order = {
+        _id: newOrder._id.toString(),
+        code: newOrder.code,
+        user: newOrder.user,
+        amount: newOrder.amount,
+        interest_rate: newOrder.interest_rate,
+        accrued_amount,
+      };
     } catch (err) {
+      /** handle duplicate unique field duplicated and other errors */
       if (err.code === 11000) {
         return {
           errors: [
@@ -129,10 +143,11 @@ export class OrderResolver {
     return { order };
   }
 
+  /** get one order query */
   @Query(() => OrderResponse, { nullable: true })
   async getOneOrder(@Arg("_id") _id: string): Promise<OrderResponse> {
     const queryOrder = await Order.findById(_id);
-
+    /** check if order id is valid, if not return error */
     if (!queryOrder) {
       return {
         errors: [
@@ -144,20 +159,42 @@ export class OrderResolver {
       };
     }
 
+    /** calculate accrued amount */
     const accrued_amount: Array<number> = calAccrued(
       queryOrder.amount,
       queryOrder.interest_rate
     );
 
-    const order = { ...queryOrder._doc, accrued_amount };
+    const order = {
+      _id: queryOrder._id.toString(),
+      code: queryOrder.code,
+      user: queryOrder.user,
+      amount: queryOrder.amount,
+      interest_rate: queryOrder.interest_rate,
+      accrued_amount,
+    };
     return { order };
   }
-
+  /** get many orders query */
   @Query(() => OrdersResponse, { nullable: true })
   async getManyOrders(@Arg("user") user: string): Promise<OrdersResponse> {
+    const queryUser = await User.findById(user);
+    /** check if user is available, if not return error */
+    if (!queryUser) {
+      return {
+        errors: [
+          {
+            field: "user",
+            message: "Invalid User",
+          },
+        ],
+      };
+    }
+
     const queryOrders = await Order.find({ user }).exec();
 
-    if (queryOrders === []) {
+    /** check if user has any order */
+    if (queryOrders.length < 1) {
       return {
         errors: [
           {
@@ -168,13 +205,23 @@ export class OrderResolver {
       };
     }
 
+    /** an array stores all queried orders */
     let orders: OrderObject[] = [];
+
+    /** calculate accrued amount for every order */
     queryOrders.forEach((order) => {
       const accrued_amount: Array<number> = calAccrued(
         order.amount,
         order.interest_rate
       );
-      orders.push({ ...order._doc, accrued_amount });
+      orders.push({
+        _id: order._id.toString(),
+        code: order.code,
+        user: order.user,
+        amount: order.amount,
+        interest_rate: order.interest_rate,
+        accrued_amount,
+      });
     });
 
     return { orders };

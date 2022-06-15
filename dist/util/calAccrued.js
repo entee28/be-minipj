@@ -3,9 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 function default_1(amount, interest_rate) {
     let arr = [];
     let tempAmount = amount;
-    while (arr.length <= 12) {
-        tempAmount += tempAmount * interest_rate;
-        arr.push(tempAmount);
+    let rate = interest_rate / 12;
+    while (arr.length < 12) {
+        tempAmount += tempAmount * rate;
+        arr.push(Math.round(tempAmount));
     }
     return arr;
 }
